@@ -75,6 +75,9 @@ input[dir=ltr]{text-align:left}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .actions{display:grid;gap:10px;margin-top:22px}
 .ro{color:var(--mute);font-size:13px;margin-top:14px}
+.del-zone{margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
+.confirm{margin-top:12px;background:var(--surface);border:1px solid #5b3a35;border-radius:14px;padding:14px}
+.confirm p{margin:0 0 12px}
 
 .toast{position:fixed;inset-inline:16px;bottom:calc(var(--safe-b) + 18px);z-index:40;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.4)}
 .toast.bad{border-color:#5b3a35;color:var(--danger)}
@@ -100,6 +103,7 @@ input[dir=ltr]{text-align:left}
   <header class="bar">
     <div class="bar-row">
       <h1>المنتجات<small id="count"></small></h1>
+      <button id="add" class="btn" style="padding:9px 14px">+ منتج جديد</button>
       <button id="out" class="btn ghost" style="padding:9px 14px">خروج</button>
     </div>
     <div class="tools">
@@ -127,6 +131,8 @@ input[dir=ltr]{text-align:left}
     <div id="photos" class="photos"></div>
     <input id="file" type="file" accept="image/*" multiple class="hidden">
 
+    <div id="cat-wrap" class="hidden"><label for="f-cat">القسم</label><select id="f-cat"></select></div>
+
     <label for="f-name">اسم المنتج</label>
     <input id="f-name" type="text">
 
@@ -150,6 +156,17 @@ input[dir=ltr]{text-align:left}
       <button id="save-next" class="btn ghost block">حفظ والانتقال للتالي</button>
     </div>
     <div id="serr" class="err" role="alert"></div>
+
+    <div id="del-zone" class="del-zone">
+      <button id="del" class="btn danger block">حذف المنتج</button>
+      <div id="del-confirm" class="confirm hidden" role="alertdialog" aria-label="تأكيد الحذف">
+        <p>بدك تحذف <b id="del-name"></b> نهائياً؟ ما في رجعة بعد الحذف.</p>
+        <div class="row2">
+          <button id="del-yes" class="btn block" style="background:var(--danger);color:#2a1511">نعم، احذف</button>
+          <button id="del-no" class="btn ghost block">إلغاء</button>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -171,7 +188,7 @@ try { S = JSON.parse(localStorage.getItem("adm_session")||"null"); } catch(e){}
 let ALL = [];                       // كل المنتجات (بدون صور)
 let NOPHOTO = new Set();            // ids بدون صور
 let PH = {};                        // id -> مصفوفة الصور
-let view = [], shown = PAGE, cur = null, curPhotos = [], photosAsText = false;
+let isNew = false, view = [], shown = PAGE, cur = null, curPhotos = [], photosAsText = false;
 
 /* ---------- أدوات ---------- */
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -284,14 +301,35 @@ function paintThumb(id){
 }
 
 /* ---------- المحرّر ---------- */
+function fillSub(cat,val){
+  const subs=SUBS[cat];
+  $("sub-wrap").classList.toggle("hidden",!subs);
+  if(subs){ $("f-sub").innerHTML='<option value="">—</option>'+Object.entries(subs).map(([k,v])=>`<option value="${k}">${v}</option>`).join(""); $("f-sub").value=val||""; }
+}
+function newId(){
+  const sample=String((ALL[0]&&ALL[0].id)||"");
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(sample)&&crypto.randomUUID) return crypto.randomUUID();
+  return "p-"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+}
+function openNew(){
+  const cats=[...new Set(ALL.map(p=>p.cat).filter(Boolean))];
+  if(!cats.length){ toast("ما في أقسام بالقاعدة لسا",true); return; }
+  isNew=true; cur={id:null,cat:cats[0],sub:null};
+  $("serr").textContent=""; $("sh-title").textContent="منتج جديد";
+  $("f-cat").innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(CATS[c]||c)}</option>`).join("");
+  ["f-name","f-price","f-stock","f-brand","f-desc"].forEach(i=>$(i).value="");
+  $("f-stock").value="1"; fillSub(cur.cat,"");
+  $("cat-wrap").classList.remove("hidden"); $("del-zone").classList.add("hidden"); $("save-next").classList.add("hidden");
+  $("save").textContent="إضافة المنتج"; $("ro").textContent="";
+  curPhotos=[]; drawPhotos(); $("sheet").classList.remove("hidden"); $("sheet").scrollTop=0; document.body.style.overflow="hidden";
+}
 async function openEditor(id){
+  isNew=false; $("cat-wrap").classList.add("hidden"); $("del-zone").classList.remove("hidden"); $("save-next").classList.remove("hidden"); $("save").textContent="حفظ";
   cur=ALL.find(p=>p.id===id); if(!cur) return;
-  $("serr").textContent=""; $("sh-title").textContent=cur.name;
+  $("serr").textContent=""; $("del-confirm").classList.add("hidden"); $("del").classList.remove("hidden"); $("sh-title").textContent=cur.name;
   $("f-name").value=cur.name||""; $("f-price").value=cur.price==null?"":cur.price; $("f-stock").value=cur.stock==null?"":cur.stock;
   $("f-brand").value=cur.brand||""; $("f-desc").value=cur.description||"";
-  const subs=SUBS[cur.cat];
-  $("sub-wrap").classList.toggle("hidden",!subs);
-  if(subs){ $("f-sub").innerHTML='<option value="">—</option>'+Object.entries(subs).map(([k,v])=>`<option value="${k}">${v}</option>`).join(""); $("f-sub").value=cur.sub||""; }
+  fillSub(cur.cat,cur.sub);
   $("ro").textContent="القسم: "+(CATS[cur.cat]||cur.cat||"—");
   curPhotos=[]; drawPhotos(); $("sheet").classList.remove("hidden"); $("sheet").scrollTop=0; document.body.style.overflow="hidden";
   if(id in PH) curPhotos=[...PH[id]];
@@ -336,6 +374,7 @@ async function save(goNext){
   if(!name){ $("serr").textContent="اكتب اسم المنتج."; return; }
   const body={name, brand:slug($("f-brand").value)||null, description:$("f-desc").value.trim(),
     price:$("f-price").value===""?null:Number($("f-price").value), stock:$("f-stock").value===""?null:Number($("f-stock").value)};
+  if(isNew) return create(body);
   if(SUBS[cur.cat]) body.sub=$("f-sub").value||null;
   $("save").disabled=$("save-next").disabled=true;
   try{
@@ -356,11 +395,60 @@ async function save(goNext){
   }catch(e){ $("serr").textContent="تعذّر الاتصال. حاول مرة ثانية."; }
   finally{ $("save").disabled=$("save-next").disabled=false; }
 }
-function closeEditor(){ $("sheet").classList.add("hidden"); document.body.style.overflow=""; cur=null; }
+async function create(body){
+  const cat=$("f-cat").value; body.cat=cat; body.sub=SUBS[cat]?($("f-sub").value||null):null;
+  if(body.price==null){ $("serr").textContent="اكتب سعر المنتج."; return; }
+  $("save").disabled=true;
+  try{
+    const sib=await api("products?select=icon,icon_type,theme&cat=eq."+encodeURIComponent(cat)+"&limit=1");
+    if(sib.ok){ const j=await sib.json(); if(j[0]) Object.assign(body,{icon:j[0].icon,icon_type:j[0].icon_type,theme:j[0].theme}); }
+    const mx=await api("products?select=sort_order&order=sort_order.desc.nullslast&limit=1");
+    if(mx.ok){ const j=await mx.json(); body.sort_order=((j[0]&&Number(j[0].sort_order))||0)+1; }
+    let extra={}, asText=photosAsText, usedId=false, usedText=false;
+    const send=()=>api("products",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({...body,...extra,photos:asText?JSON.stringify(curPhotos):curPhotos})});
+    let r=await send();
+    for(let i=0;i<3&&!r.ok;i++){
+      const m=await errText(r);
+      if(!usedId&&/"id"/i.test(m)){ usedId=true; extra={id:newId()}; }
+      else if(!usedText&&/photos|json|malformed array/i.test(m)){ usedText=true; asText=!asText; photosAsText=asText; }
+      else { $("serr").textContent="ما انضاف: "+m; return; }
+      r=await send();
+    }
+    if(!r.ok){ $("serr").textContent="ما انضاف: "+await errText(r); return; }
+    const rows=await r.json();
+    if(!rows.length){ $("serr").textContent="ما انضاف. تأكد إنك مسجل دخول بحساب الإدارة."; return; }
+    const n=rows[0];
+    ALL.unshift({id:n.id,cat:n.cat,sub:n.sub,brand:n.brand,name:n.name,description:n.description,price:n.price,stock:n.stock});
+    PH[n.id]=[...curPhotos]; if(!curPhotos.length) NOPHOTO.add(n.id);
+    if(n.brand && ![...$("brand").options].some(o=>o.value===n.brand)){ const o=document.createElement("option"); o.value=o.textContent=n.brand; $("brand").appendChild(o); }
+    $("q").value=""; $("brand").value=""; $("catf").value=""; $("nophoto").setAttribute("aria-pressed","false");
+    closeEditor(); render(true); window.scrollTo(0,0); toast("انضاف: "+n.name);
+  }catch(e){ $("serr").textContent="تعذّر الاتصال. حاول مرة ثانية."; }
+  finally{ $("save").disabled=false; }
+}
+async function removeProduct(){
+  if(!cur) return;
+  const id=cur.id, name=cur.name; $("serr").textContent=""; $("del-yes").disabled=$("del-no").disabled=true;
+  try{
+    const r=await api("products?id=eq."+encodeURIComponent(id),{method:"DELETE",headers:{Prefer:"return=representation"}});
+    if(!r.ok){ $("serr").textContent="ما انحذف: "+await errText(r); return; }
+    const rows=await r.json();
+    if(!rows.length){ $("serr").textContent="ما انحذف. تأكد إنك مسجل دخول بحساب الإدارة."; return; }
+    ALL=ALL.filter(p=>p.id!==id); NOPHOTO.delete(id); delete PH[id];
+    closeEditor(); render(); toast("انحذف: "+name);
+  }catch(e){ $("serr").textContent="تعذّر الاتصال. حاول مرة ثانية."; }
+  finally{ $("del-yes").disabled=$("del-no").disabled=false; }
+}
+function closeEditor(){ $("sheet").classList.add("hidden"); document.body.style.overflow=""; cur=null; isNew=false; }
 
 /* ---------- ربط الأحداث ---------- */
 $("go").onclick=login; $("pw").onkeydown=e=>{ if(e.key==="Enter") login(); };
 $("out").onclick=logout; $("sh-x").onclick=closeEditor;
+$("del").onclick=()=>{ $("del-name").textContent=cur?cur.name:""; $("del").classList.add("hidden"); $("del-confirm").classList.remove("hidden"); $("del-confirm").scrollIntoView({block:"center"}); };
+$("del-no").onclick=()=>{ $("del-confirm").classList.add("hidden"); $("del").classList.remove("hidden"); };
+$("del-yes").onclick=removeProduct;
+$("add").onclick=openNew;
+$("f-cat").onchange=()=>{ cur.cat=$("f-cat").value; fillSub(cur.cat,""); };
 $("save").onclick=()=>save(false); $("save-next").onclick=()=>save(true);
 $("more").onclick=()=>{ shown+=PAGE; render(); };
 ["q","brand","catf"].forEach(i=>$(i).addEventListener("input",()=>render(true)));
