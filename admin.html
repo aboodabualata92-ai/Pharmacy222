@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>إدارة المنتجات — صيدلية د. محمد البوسطة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#14201d; --surface:#1b2b27; --raised:#233630; --line:#2f443d;
+  --text:#e9efe9; --mute:#93a8a0; --mint:#7fb59f; --gold:#dcc58f; --gold-ink:#2a2415;
+  --danger:#d98b7c; --ok:#7fb59f;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Tajawal',system-ui,sans-serif;font-size:16px;line-height:1.5}
+body{padding-top:var(--safe-t);padding-bottom:calc(var(--safe-b) + 24px);min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.hidden{display:none!important}
+
+/* login */
+.login{max-width:380px;margin:0 auto;padding:72px 22px 24px}
+.login h1{font-size:26px;margin:0 0 6px;font-weight:700}
+.login p{margin:0 0 28px;color:var(--mute)}
+label{display:block;font-size:14px;color:var(--mute);margin:14px 0 6px}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:16px}
+textarea{min-height:92px;resize:vertical}
+input[dir=ltr]{text-align:left}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:13px 18px;font-weight:700;background:var(--gold);color:var(--gold-ink)}
+.btn.block{width:100%}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
+.btn.danger{background:transparent;border:1px solid #5b3a35;color:var(--danger);font-weight:500}
+.btn:disabled{opacity:.5}
+.err{color:var(--danger);font-size:14px;margin-top:12px;min-height:20px}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(var(--safe-t) + 10px) 14px 10px;border-bottom:1px solid var(--line)}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar h1{flex:1;margin:0;font-size:18px;font-weight:700}
+.bar small{color:var(--mute);font-weight:400;font-size:13px;margin-inline-start:6px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.tools input{grid-column:1 / -1}
+.chips{display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:none;border:1px solid var(--line);background:transparent;border-radius:999px;padding:7px 14px;font-size:14px;color:var(--mute)}
+.chip[aria-pressed=true]{background:var(--mint);border-color:var(--mint);color:#0f1c18;font-weight:700}
+
+/* list */
+.list{padding:12px 14px;display:grid;gap:10px}
+.item{display:flex;gap:12px;align-items:center;width:100%;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.thumb{flex:none;width:64px;height:64px;border-radius:10px;background:var(--raised) center/cover no-repeat;display:grid;place-items:center;color:var(--mute);font-size:11px;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+.meta{flex:1;min-width:0}
+.meta b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meta span{display:block;color:var(--mute);font-size:13px}
+.price{flex:none;font-weight:700;color:var(--mint)}
+.empty{padding:40px 20px;text-align:center;color:var(--mute)}
+.more{margin:4px 14px 0;width:calc(100% - 28px)}
+
+/* editor */
+.sheet{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet-in{max-width:560px;margin:0 auto;padding:calc(var(--safe-t) + 12px) 16px calc(var(--safe-b) + 28px)}
+.sheet-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.sheet-head h2{flex:1;margin:0;font-size:18px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.x{border:1px solid var(--line);background:transparent;border-radius:12px;width:44px;height:44px;font-size:20px}
+.photos{display:flex;gap:10px;overflow-x:auto;padding:6px 0 4px}
+.ph{position:relative;flex:none;width:132px;height:132px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid var(--line)}
+.ph img{width:100%;height:100%;object-fit:contain}
+.ph button{position:absolute;top:6px;inset-inline-start:6px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(20,32,29,.85);color:#fff;font-size:16px}
+.add{flex:none;width:132px;height:132px;border-radius:14px;border:1.5px dashed var(--mint);background:transparent;color:var(--mint);display:grid;place-items:center;text-align:center;font-weight:500;padding:8px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:grid;gap:10px;margin-top:22px}
+.ro{color:var(--mute);font-size:13px;margin-top:14px}
+
+.toast{position:fixed;inset-inline:16px;bottom:calc(var(--safe-b) + 18px);z-index:40;background:var(--raised);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.toast.bad{border-color:#5b3a35;color:var(--danger)}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .18s ease-out}@keyframes up{from{transform:translateY(8px);opacity:0}}}
+</style>
+</head>
+<body>
+
+<!-- تسجيل الدخول -->
+<section id="login" class="login hidden">
+  <h1>إدارة المنتجات</h1>
+  <p>سجّل الدخول بحساب لوحة التحكم.</p>
+  <label for="em">البريد الإلكتروني</label>
+  <input id="em" type="email" dir="ltr" autocomplete="username" inputmode="email">
+  <label for="pw">كلمة السر</label>
+  <input id="pw" type="password" dir="ltr" autocomplete="current-password">
+  <button id="go" class="btn block" style="margin-top:20px">تسجيل الدخول</button>
+  <div id="lerr" class="err" role="alert"></div>
+</section>
+
+<!-- القائمة -->
+<section id="app" class="hidden">
+  <header class="bar">
+    <div class="bar-row">
+      <h1>المنتجات<small id="count"></small></h1>
+      <button id="out" class="btn ghost" style="padding:9px 14px">خروج</button>
+    </div>
+    <div class="tools">
+      <input id="q" type="search" placeholder="ابحث باسم المنتج أو الماركة" aria-label="بحث">
+      <select id="brand" aria-label="الماركة"><option value="">كل الماركات</option></select>
+      <select id="catf" aria-label="القسم"><option value="">كل الأقسام</option></select>
+    </div>
+    <div class="chips">
+      <button id="nophoto" class="chip" aria-pressed="false">بدون صورة</button>
+    </div>
+  </header>
+  <div id="list" class="list"></div>
+  <button id="more" class="btn ghost more hidden">عرض المزيد</button>
+</section>
+
+<!-- التعديل -->
+<section id="sheet" class="sheet hidden" role="dialog" aria-modal="true" aria-label="تعديل المنتج">
+  <div class="sheet-in">
+    <div class="sheet-head">
+      <h2 id="sh-title"></h2>
+      <button id="sh-x" class="x" aria-label="إغلاق">✕</button>
+    </div>
+
+    <label>الصور</label>
+    <div id="photos" class="photos"></div>
+    <input id="file" type="file" accept="image/*" multiple class="hidden">
+
+    <label for="f-name">اسم المنتج</label>
+    <input id="f-name" type="text">
+
+    <div class="row2">
+      <div><label for="f-price">السعر (د.أ)</label><input id="f-price" type="number" step="0.05" min="0" inputmode="decimal"></div>
+      <div><label for="f-stock">الكمية</label><input id="f-stock" type="number" step="1" min="0" inputmode="numeric"></div>
+    </div>
+
+    <div class="row2">
+      <div><label for="f-brand">الماركة</label><input id="f-brand" type="text" dir="ltr"></div>
+      <div id="sub-wrap"><label for="f-sub">القسم الفرعي</label><select id="f-sub"></select></div>
+    </div>
+
+    <label for="f-desc">الوصف</label>
+    <textarea id="f-desc"></textarea>
+
+    <div id="ro" class="ro"></div>
+
+    <div class="actions">
+      <button id="save" class="btn block">حفظ</button>
+      <button id="save-next" class="btn ghost block">حفظ والانتقال للتالي</button>
+    </div>
+    <div id="serr" class="err" role="alert"></div>
+  </div>
+</section>
+
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+const SB  = "https://asmlxbglpktblmaxduwy.supabase.co";
+const KEY = "sb_publishable_gTOO0Xdbz1eCRYRW9iBLSA_4Zrmug0a";
+const SUBS = {
+  cosmetics:{skincare:"العناية بالبشرة",suncare:"واقي الشمس",haircare:"العناية بالشعر",bodycare:"العناية بالجسم"},
+  babies:{milk:"حليب أطفال",diapers:"حفاضات",essentials:"مستلزمات أطفال"}
+};
+const CATS = {supplements:"مكملات غذائية",cosmetics:"مستحضرات تجميل",babies:"أطفال",men:"رجال",women:"نساء"};
+const PAGE = 40;
+
+const $ = id => document.getElementById(id);
+let S = null;                       // الجلسة
+try { S = JSON.parse(localStorage.getItem("adm_session")||"null"); } catch(e){}
+let ALL = [];                       // كل المنتجات (بدون صور)
+let NOPHOTO = new Set();            // ids بدون صور
+let PH = {};                        // id -> مصفوفة الصور
+let view = [], shown = PAGE, cur = null, curPhotos = [], photosAsText = false;
+
+/* ---------- أدوات ---------- */
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const slug = s => String(s||"").trim().toLowerCase().replace(/\s+/g,"-").replace(/[^\p{L}\p{N}-]/gu,"");
+function toast(msg,bad){
+  const t=$("toast"); t.textContent=msg; t.className="toast"+(bad?" bad":"");
+  clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.add("hidden"),bad?5000:2200);
+}
+function saveSession(j){
+  S={access:j.access_token,refresh:j.refresh_token,exp:Date.now()+(j.expires_in||3600)*1000-60000};
+  localStorage.setItem("adm_session",JSON.stringify(S));
+}
+async function refresh(){
+  if(!S||!S.refresh) return false;
+  const r=await fetch(SB+"/auth/v1/token?grant_type=refresh_token",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:S.refresh})});
+  if(!r.ok) return false;
+  saveSession(await r.json()); return true;
+}
+async function api(path,opts={}){
+  if(S && Date.now()>S.exp) await refresh();
+  const h={apikey:KEY,"Content-Type":"application/json",...(opts.headers||{})};
+  if(S) h.Authorization="Bearer "+S.access;
+  let r=await fetch(SB+"/rest/v1/"+path,{...opts,headers:h});
+  if(r.status===401 && S && await refresh()){
+    h.Authorization="Bearer "+S.access;
+    r=await fetch(SB+"/rest/v1/"+path,{...opts,headers:h});
+  }
+  return r;
+}
+async function errText(r){ try{const j=await r.json();return j.message||j.error_description||j.hint||JSON.stringify(j);}catch(e){return "خطأ "+r.status;} }
+
+/* ---------- الدخول ---------- */
+async function login(){
+  $("lerr").textContent=""; $("go").disabled=true;
+  try{
+    const r=await fetch(SB+"/auth/v1/token?grant_type=password",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({email:$("em").value.trim(),password:$("pw").value})});
+    if(!r.ok){ $("lerr").textContent="البريد أو كلمة السر غير صحيحة."; return; }
+    saveSession(await r.json()); $("pw").value=""; start();
+  }catch(e){ $("lerr").textContent="تعذّر الاتصال. تأكد من الإنترنت وحاول مرة ثانية."; }
+  finally{ $("go").disabled=false; }
+}
+function logout(){ localStorage.removeItem("adm_session"); S=null; ALL=[]; PH={}; show("login"); }
+function show(w){ $("login").classList.toggle("hidden",w!=="login"); $("app").classList.toggle("hidden",w!=="app"); }
+
+/* ---------- تحميل المنتجات ---------- */
+async function start(){
+  show("app"); $("list").innerHTML='<div class="empty">جاري التحميل…</div>';
+  ALL=[]; let from=0;
+  while(true){
+    const r=await api("products?select=id,cat,sub,brand,name,description,price,stock&order=brand.asc.nullslast,name.asc",{headers:{Range:from+"-"+(from+999)}});
+    if(r.status===401){ logout(); return; }
+    if(!r.ok){ $("list").innerHTML='<div class="empty">تعذّر تحميل المنتجات: '+esc(await errText(r))+'</div>'; return; }
+    const rows=await r.json(); ALL=ALL.concat(rows);
+    if(rows.length<1000) break; from+=1000;
+  }
+  const np=await api("products?select=id&or=(photos.is.null,photos.eq.[])");
+  NOPHOTO=new Set(np.ok?(await np.json()).map(x=>x.id):[]);
+  const brands=[...new Set(ALL.map(p=>p.brand).filter(Boolean))].sort();
+  $("brand").innerHTML='<option value="">كل الماركات</option>'+brands.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join("");
+  const cats=[...new Set(ALL.map(p=>p.cat).filter(Boolean))];
+  $("catf").innerHTML='<option value="">كل الأقسام</option>'+cats.map(c=>`<option value="${esc(c)}">${esc(CATS[c]||c)}</option>`).join("");
+  render(true);
+}
+
+/* ---------- القائمة ---------- */
+function filtered(){
+  const q=$("q").value.trim().toLowerCase(), b=$("brand").value, c=$("catf").value, np=$("nophoto").getAttribute("aria-pressed")==="true";
+  return ALL.filter(p=>(!b||p.brand===b)&&(!c||p.cat===c)&&(!np||NOPHOTO.has(p.id))&&(!q||(p.name||"").toLowerCase().includes(q)||(p.brand||"").toLowerCase().includes(q)));
+}
+function render(reset){
+  if(reset) shown=PAGE;
+  view=filtered();
+  $("count").textContent=view.length+" من "+ALL.length+" · بدون صورة: "+NOPHOTO.size;
+  const L=$("list"); L.innerHTML="";
+  if(!view.length){ L.innerHTML='<div class="empty">ما في منتجات تطابق البحث.</div>'; $("more").classList.add("hidden"); return; }
+  view.slice(0,shown).forEach(p=>{
+    const b=document.createElement("button"); b.className="item"; b.dataset.id=p.id;
+    b.innerHTML=`<div class="thumb" data-t="${esc(p.id)}">${NOPHOTO.has(p.id)?"بدون صورة":""}</div>
+      <div class="meta"><b>${esc(p.name)}</b><span>${esc(p.brand||"—")} · الكمية ${p.stock==null?"—":esc(p.stock)}</span></div>
+      <div class="price">${p.price==null?"":Number(p.price).toFixed(2)}</div>`;
+    b.onclick=()=>openEditor(p.id); L.appendChild(b);
+  });
+  $("more").classList.toggle("hidden",view.length<=shown);
+  observeThumbs();
+}
+let io=null, pending=new Set(), timer=null;
+function observeThumbs(){
+  if(io) io.disconnect();
+  io=new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ const id=e.target.dataset.t; io.unobserve(e.target); if(!NOPHOTO.has(id)&&!(id in PH)) pending.add(id); }});
+    clearTimeout(timer); timer=setTimeout(loadThumbs,150);
+  },{rootMargin:"200px"});
+  document.querySelectorAll(".thumb").forEach(t=>io.observe(t));
+}
+async function loadThumbs(){
+  const ids=[...pending].slice(0,20); ids.forEach(i=>pending.delete(i));
+  if(!ids.length) return;
+  const r=await api("products?select=id,photos&id=in.("+ids.map(i=>'"'+i.replace(/"/g,'')+'"').join(",")+")");
+  if(r.ok) (await r.json()).forEach(x=>{ PH[x.id]=parsePhotos(x.photos); paintThumb(x.id); });
+  if(pending.size) loadThumbs();
+}
+function parsePhotos(v){
+  if(Array.isArray(v)) return v;
+  if(typeof v==="string"){ photosAsText=true; try{const a=JSON.parse(v); return Array.isArray(a)?a:[];}catch(e){return v?[v]:[];} }
+  return [];
+}
+function paintThumb(id){
+  const el=document.querySelector('.thumb[data-t="'+CSS.escape(id)+'"]'); if(!el) return;
+  const a=PH[id]||[]; el.innerHTML=a[0]?`<img alt="" src="${esc(a[0])}">`:"بدون صورة";
+}
+
+/* ---------- المحرّر ---------- */
+async function openEditor(id){
+  cur=ALL.find(p=>p.id===id); if(!cur) return;
+  $("serr").textContent=""; $("sh-title").textContent=cur.name;
+  $("f-name").value=cur.name||""; $("f-price").value=cur.price==null?"":cur.price; $("f-stock").value=cur.stock==null?"":cur.stock;
+  $("f-brand").value=cur.brand||""; $("f-desc").value=cur.description||"";
+  const subs=SUBS[cur.cat];
+  $("sub-wrap").classList.toggle("hidden",!subs);
+  if(subs){ $("f-sub").innerHTML='<option value="">—</option>'+Object.entries(subs).map(([k,v])=>`<option value="${k}">${v}</option>`).join(""); $("f-sub").value=cur.sub||""; }
+  $("ro").textContent="القسم: "+(CATS[cur.cat]||cur.cat||"—");
+  curPhotos=[]; drawPhotos(); $("sheet").classList.remove("hidden"); $("sheet").scrollTop=0; document.body.style.overflow="hidden";
+  if(id in PH) curPhotos=[...PH[id]];
+  else if(!NOPHOTO.has(id)){
+    const r=await api("products?select=photos&id=eq."+encodeURIComponent(id));
+    if(r.ok){ const j=await r.json(); PH[id]=parsePhotos(j[0]&&j[0].photos); curPhotos=[...PH[id]]; }
+  }
+  drawPhotos();
+}
+function drawPhotos(){
+  const w=$("photos"); w.innerHTML="";
+  curPhotos.forEach((src,i)=>{
+    const d=document.createElement("div"); d.className="ph";
+    d.innerHTML=`<img alt="صورة ${i+1}" src="${esc(src)}"><button type="button" aria-label="حذف الصورة">✕</button>`;
+    d.querySelector("button").onclick=()=>{ curPhotos.splice(i,1); drawPhotos(); };
+    w.appendChild(d);
+  });
+  const a=document.createElement("button"); a.type="button"; a.className="add"; a.textContent=curPhotos.length?"إضافة صورة":"اختيار صورة";
+  a.onclick=()=>$("file").click(); w.appendChild(a);
+}
+function toJpeg(file){
+  return new Promise((res,rej)=>{
+    const img=new Image(), u=URL.createObjectURL(file);
+    img.onload=()=>{
+      const M=500; let w=img.naturalWidth,h=img.naturalHeight, k=Math.min(1,M/Math.max(w,h));
+      w=Math.round(w*k); h=Math.round(h*k);
+      const c=document.createElement("canvas"); c.width=w; c.height=h;
+      const x=c.getContext("2d"); x.fillStyle="#fff"; x.fillRect(0,0,w,h); x.drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(u); res(c.toDataURL("image/jpeg",0.72));
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error("bad")); };
+    img.src=u;
+  });
+}
+$("file").onchange=async e=>{
+  for(const f of e.target.files){ try{ curPhotos.push(await toJpeg(f)); }catch(x){ toast("تعذّر قراءة الصورة",true); } }
+  e.target.value=""; drawPhotos();
+};
+async function save(goNext){
+  $("serr").textContent="";
+  const name=$("f-name").value.trim();
+  if(!name){ $("serr").textContent="اكتب اسم المنتج."; return; }
+  const body={name, brand:slug($("f-brand").value)||null, description:$("f-desc").value.trim(),
+    price:$("f-price").value===""?null:Number($("f-price").value), stock:$("f-stock").value===""?null:Number($("f-stock").value)};
+  if(SUBS[cur.cat]) body.sub=$("f-sub").value||null;
+  $("save").disabled=$("save-next").disabled=true;
+  try{
+    const send=async asText=>api("products?id=eq."+encodeURIComponent(cur.id),{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({...body,photos:asText?JSON.stringify(curPhotos):curPhotos})});
+    let r=await send(photosAsText);
+    if(!r.ok){ const m=await errText(r); if(/malformed|invalid input|type text|json/i.test(m)){ photosAsText=!photosAsText; r=await send(photosAsText); } else { $("serr").textContent="ما انحفظ: "+m; return; } }
+    if(!r.ok){ $("serr").textContent="ما انحفظ: "+await errText(r); return; }
+    const rows=await r.json();
+    if(!rows.length){ $("serr").textContent="ما انحفظ. تأكد إنك مسجل دخول بحساب الإدارة."; return; }
+    Object.assign(cur,{name:body.name,brand:body.brand,description:body.description,price:body.price,stock:body.stock}); if("sub" in body) cur.sub=body.sub;
+    PH[cur.id]=[...curPhotos]; curPhotos.length?NOPHOTO.delete(cur.id):NOPHOTO.add(cur.id);
+    toast("انحفظ");
+    const idx=view.findIndex(p=>p.id===cur.id);
+    if(goNext){
+      const nxt=view.slice(idx+1).find(p=>NOPHOTO.has(p.id))||view[idx+1];
+      render(); if(nxt){ openEditor(nxt.id); } else closeEditor();
+    } else { closeEditor(); render(); }
+  }catch(e){ $("serr").textContent="تعذّر الاتصال. حاول مرة ثانية."; }
+  finally{ $("save").disabled=$("save-next").disabled=false; }
+}
+function closeEditor(){ $("sheet").classList.add("hidden"); document.body.style.overflow=""; cur=null; }
+
+/* ---------- ربط الأحداث ---------- */
+$("go").onclick=login; $("pw").onkeydown=e=>{ if(e.key==="Enter") login(); };
+$("out").onclick=logout; $("sh-x").onclick=closeEditor;
+$("save").onclick=()=>save(false); $("save-next").onclick=()=>save(true);
+$("more").onclick=()=>{ shown+=PAGE; render(); };
+["q","brand","catf"].forEach(i=>$(i).addEventListener("input",()=>render(true)));
+$("nophoto").onclick=e=>{ const b=e.currentTarget; b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")==="true"?"false":"true"); render(true); };
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&cur) closeEditor(); });
+
+if(S) start(); else show("login");
+</script>
+</body>
+</html>
